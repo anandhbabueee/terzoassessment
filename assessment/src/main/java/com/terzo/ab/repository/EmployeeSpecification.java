@@ -6,6 +6,7 @@ import javax.persistence.criteria.Root;
 
 import org.springframework.data.jpa.domain.Specification;
 
+import com.terzo.ab.model.Department;
 import com.terzo.ab.model.Designation;
 import com.terzo.ab.model.Employee;
 
@@ -25,7 +26,7 @@ public class EmployeeSpecification {
 
 	}
 
-	public static Specification<Employee> getEmployeeBySalary(long salary) {
+	public static Specification<Employee> getEmployeeBySalary(long salary, String operation) {
 		return new Specification<Employee>() {
 			private static final long serialVersionUID = 2L;
 
@@ -33,13 +34,21 @@ public class EmployeeSpecification {
 			public javax.persistence.criteria.Predicate toPredicate(Root<Employee> root, CriteriaQuery<?> query,
 					CriteriaBuilder criteriaBuilder) {
 				query.orderBy(criteriaBuilder.asc(root.get("name")));
-				return criteriaBuilder.greaterThan(root.get("salary"), salary);
-			}
+				switch(operation)
+				{
+				case ">=" : return criteriaBuilder.greaterThanOrEqualTo(root.get("salary"), salary);
+				case "<=" : return criteriaBuilder.lessThanOrEqualTo(root.get("salary"), salary);
+				case "==" : return criteriaBuilder.equal(root.get("salary"), salary);
+				case ">"  : return criteriaBuilder.greaterThan(root.get("salary"), salary);
+				case "<"  : return criteriaBuilder.lessThan(root.get("salary"), salary);
+				default : return criteriaBuilder.greaterThan(root.get("salary"), salary);
+				}
+				}
 
 		};
 	}
 	
-	public static Specification<Employee> getEmployeeBySalary(long salary, long departmentId) {
+	public static Specification<Employee> getEmployeeBySalary(long salary, Department department) {
 		return new Specification<Employee>() {
 			private static final long serialVersionUID = 2L;
 
@@ -48,7 +57,7 @@ public class EmployeeSpecification {
 					CriteriaBuilder criteriaBuilder) {
 				query.orderBy(criteriaBuilder.desc(root.get("salary")));
 				return criteriaBuilder.and(criteriaBuilder.greaterThan(root.get("salary"), salary), 
-						criteriaBuilder.equal(root.get("departmentId"), departmentId));
+						criteriaBuilder.equal(root.get("department"), department));
 			}
 
 		};
