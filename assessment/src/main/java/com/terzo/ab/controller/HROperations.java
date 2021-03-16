@@ -24,7 +24,7 @@ public class HROperations {
 		return empRepo.save(emp);
 	}
 
-	@PostMapping("viewSalaryByEmployee")
+	@GetMapping("viewSalaryByEmployee")
 	public Employee viewEmployeeSalary(@RequestParam("employeeid") Long id) {
 		Employee emp = empRepo.findById(id).get();
 		return empRepo.save(emp);
