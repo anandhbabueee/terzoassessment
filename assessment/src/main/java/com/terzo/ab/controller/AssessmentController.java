@@ -4,13 +4,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.transaction.Transactional;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -18,156 +15,100 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.terzo.ab.model.Department;
-import com.terzo.ab.model.Designation;
-import com.terzo.ab.model.Employee;
-import com.terzo.ab.repository.DepartmentRepository;
-import com.terzo.ab.repository.EmployeeRepository;
-import com.terzo.ab.repository.EmployeeSpecification;
+import com.terzo.ab.dto.DepartmentDTO;
+import com.terzo.ab.dto.EmployeeDTO;
+import com.terzo.ab.service.AssesmentService;
 
 @RestController
 public class AssessmentController {
 	
 	@Autowired
-	private EmployeeRepository empRepo;
-	
-	@Autowired
-	private DepartmentRepository depRepo;
+	AssesmentService assessmentService;
 	
 	@PostMapping("/employees")
-	@Transactional
-	public @ResponseBody Employee createEmployee(@Valid @RequestBody Employee employee)
+	public @ResponseBody EmployeeDTO createEmployee(@Valid @RequestBody EmployeeDTO employeeDTO)
 	{
-		if (employee.getDepartment() != null && 
-				employee.getDepartment().getId() != null)
-		{
-			return empRepo.save(employee);
-		}
-		else if (employee.getDepartment().getName() != null)
-		{
-			Department dept = depRepo.save(employee.getDepartment());
-			employee.setDepartment(dept);
-			return empRepo.save(employee);
-		}
-		return null;
+		return assessmentService.createEmployee(employeeDTO);
 	}
 	
 	@GetMapping("/employees/{id}")
-	 public Employee getEmployee(@PathVariable Long id) {
+	 public EmployeeDTO getEmployee(@PathVariable Long id) {
 	    
-	    return empRepo.findById(id).get();
+	    return assessmentService.getEmployee(id);
 	  }
 	
 	@PostMapping("/mapEmployee")
-	 public Employee mapDept(@RequestParam("empId") Long id, @RequestParam("deptId") Long deptId) {
+	 public EmployeeDTO mapDept(@RequestParam("empId") Long id, @RequestParam("deptId") Long deptId) {
 	    
-	    return empRepo.findById(id)
-	    		.map(emp -> {
-	    			emp.setDepartment(depRepo.findById(deptId).get());
-	    			return empRepo.save(emp);
-	    		}).orElseGet(() -> {
-	    			return null;
-	    		});
+	    return assessmentService.mapDept(id, deptId);
 	  }
 	
 	@GetMapping("/deptEmployees")
-	 public List<Employee> getEmployeebyDepartment(@RequestParam("deptId") Long id, 
-			 @RequestParam("pageIndex") int pageIndex, @RequestParam("pageLimit") int pageSize) {
-		
-		Pageable page = PageRequest.of(pageIndex, pageSize);
-	    return empRepo.findByDepartmentId(id,  page);
+	 public List<EmployeeDTO> getEmployeebyDepartment(@RequestParam("deptId") Long id, 
+			 @RequestParam("pageIndex") int pageIndex, @RequestParam("pageLimit") int pageSize) {		
+	    return assessmentService.getEmployeebyDepartment(id, pageIndex, pageSize);
 	  }
 	
-	@PostMapping("/employees/{id}")
-	public Employee updateEmployees(@RequestBody Employee newEmployee, @PathVariable Long id) {
+	@PutMapping("/employees/{id}")
+	public EmployeeDTO updateEmployees(@Valid @RequestBody EmployeeDTO newEmployee, @PathVariable Long id) {
 	    
-	    return empRepo.findById(id)
-	      .map(employee -> {
-	        employee.setName(newEmployee.getName());
-	        employee.setSalary(newEmployee.getSalary());
-	        employee.setDepartment(depRepo.findById(newEmployee.getDepartment().getId()).get());
-	        return empRepo.save(employee);
-	      })
-	      .orElseGet(() -> {
-	        newEmployee.setId(id);
-	        return empRepo.save(newEmployee);
-	      });
+	    return assessmentService.updateEmployees(newEmployee, id);
 	  }
 
 	@PostMapping("/departments")
-	public Department createDept(@Valid @RequestBody Department dep)
+	public DepartmentDTO createDept(@Valid @RequestBody DepartmentDTO dep)
 	{
-		return depRepo.save(dep);
+		return assessmentService.createDept(dep);
 	}
 	
 	@GetMapping("/departments/{id}")
-	 public Department getDept(@PathVariable Long id) {
+	 public DepartmentDTO getDept(@PathVariable Long id) {
 	    
-	    return depRepo.findById(id).get();
+	    return assessmentService.getDept(id);
 	  }
 	
 	@PostMapping("/departments/{id}")
-	 public Department updateDeptName(@PathVariable Long id, 
+	 public DepartmentDTO updateDeptName(@PathVariable Long id, 
 			 @RequestParam("name") String deptname) {
 	    
-	   return depRepo.findById(id)
-	    		.map(department -> {
-	    			department.setName(deptname);
-	    			return depRepo.save(department);
-	    		}).orElseGet(() -> {
-	    			Department dept = new Department();
-	    			dept.setId(id);
-	    			dept.setName(deptname);
-	    			return depRepo.save(dept);
-	    		});
+	   return assessmentService.updateDeptName(id, deptname);
 	  }
 	
 	@GetMapping("/employeesBySpec/{id}")
-	 public List<Employee> getEmployeeBySpec(@PathVariable Long id) {
+	 public List<EmployeeDTO> getEmployeeBySpec(@PathVariable Long id) {
 	    
-	    return empRepo.findAll(EmployeeSpecification.getEmployeeById(id));
+	   return assessmentService.getEmployeeBySpec(id);
 	  }
 	
 	@GetMapping("/employeesBySalary")
-	 public Page<Employee> getEmployeeBySpec(@RequestParam("salary") int salary, @RequestParam("operator") String operation,
+	 public Page<EmployeeDTO> getEmployeeBySpec(@RequestParam("salary") int salary, @RequestParam("operator") String operation,
 			 @RequestParam("pageIndex") int pageIndex, @RequestParam("pageLimit") int pageSize) {
 	    
-		Pageable page = PageRequest.of(pageIndex, pageSize);
-	    return empRepo.findAll(EmployeeSpecification.getEmployeeBySalary(salary, operation), page);
+		return assessmentService.getEmployeeBySpec(salary, operation, pageIndex, pageSize);
 	  }
 	
 	@GetMapping("/employeesSalaryByDept")
-	 public Page<Employee> getEmployeeBySpec(@RequestParam("deptId") long deptId, @RequestParam("salary") int salary,
+	 public Page<EmployeeDTO> getEmployeeBySpec(@RequestParam("deptId") long deptId, @RequestParam("salary") int salary,
 			 @RequestParam("pageIndex") int pageIndex, @RequestParam("pageLimit") int pageSize) {
 	    
-		Pageable page = PageRequest.of(pageIndex, pageSize);
-	    return empRepo.findAll(EmployeeSpecification.getEmployeeBySalary(salary, depRepo.findById(deptId).get()), page);
+	    return assessmentService.getEmployeeBySpec(deptId, salary, pageIndex, pageSize);
 	  }
 	
 	@GetMapping("/employeesByDesignation")
-	 public Page<Employee> getEmployeeByDesignation(@RequestParam("designation") String designation, 
+	 public Page<EmployeeDTO> getEmployeeByDesignation(@RequestParam("designation") String designation, 
 			 @RequestParam("pageIndex") int pageIndex, @RequestParam("pageLimit") int pageSize) {
 		
-		Designation d1 = Designation.ASSOCIATE;
-		Pageable page = PageRequest.of(pageIndex, pageSize);
+		return assessmentService.getEmployeeByDesignation(designation, pageIndex, pageSize);
+	}
 		
-		switch(designation)
-		{
-			case "ARCHITECT" : d1 = Designation.ARCHITECT;
-			break;
-			case "ASSOCIATE" : d1 = Designation.ASSOCIATE;
-			break;
-			case "MANAGER"   : d1 = Designation.MANAGER;
-		}
-	    
-	    return empRepo.findAll(EmployeeSpecification.getEmployeeByDesignation(d1), page);
-	  }
+		
 	
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	@ExceptionHandler(MethodArgumentNotValidException.class)
@@ -184,7 +125,7 @@ public class AssessmentController {
 	
 	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
 	@ExceptionHandler(Exception.class)
-	public Map<String, String> handleValidationExceptions(
+	public Map<String, String> handleApplicationExceptions(
 	 Exception ex) {
 	    Map<String, String> errors = new HashMap<>();
 	        errors.put("message", "Request Processing failed. please contact support team");

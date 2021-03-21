@@ -7,27 +7,24 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.terzo.ab.model.Employee;
-import com.terzo.ab.repository.EmployeeRepository;
+import com.terzo.ab.dto.EmployeeDTO;
+import com.terzo.ab.service.AssesmentService;
 
 @RestController
 @RequestMapping("hr/")
 public class HROperations {
 
 	@Autowired
-	EmployeeRepository empRepo;
+	AssesmentService assesmentService;
 
 	@PostMapping("updateSalary")
-	public Employee updateEmployeeSalary(@RequestParam("employeeid") Long id, @RequestParam("salary") int salary) {
-		Employee emp = empRepo.findById(id).get();
-		emp.setSalary(salary);
-		return empRepo.save(emp);
+	public EmployeeDTO updateEmployeeSalary(@RequestParam("employeeid") Long id, @RequestParam("salary") int salary) {
+		return assesmentService.updateEmployeeSalary(id, salary);
 	}
 
 	@GetMapping("viewSalaryByEmployee")
-	public Employee viewEmployeeSalary(@RequestParam("employeeid") Long id) {
-		Employee emp = empRepo.findById(id).get();
-		return empRepo.save(emp);
+	public EmployeeDTO viewEmployeeSalary(@RequestParam("employeeid") Long id) {
+		return assesmentService.viewEmployeeSalary(id);
 	}
 
 }
